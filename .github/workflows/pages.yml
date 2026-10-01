@@ -19,7 +19,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install --disable-pip-version-check requests beautifulsoup4
-      - run: mkdir -p site && cp index.html site/index.html
+      - name: Copy web app
+        run: |
+          mkdir -p site
+          cp index.html app.js styles.css supabase-config.js site/
       - run: python scripts/fetch_cards.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
