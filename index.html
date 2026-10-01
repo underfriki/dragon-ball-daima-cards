@@ -8,140 +8,149 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-  <div>
-    <h1>🐉 Dragon Ball Daima · Panini</h1>
-    <small>207 cartas · 407 variantes · colección por usuario</small>
+
+<section id="authGate" class="auth-gate">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-dragon">🐉</div>
+      <h1>Dragon Ball Daima Cards</h1>
+      <p>Tu colección Panini, guardada por usuario.</p>
+    </div>
+
+    <div class="auth-tabs">
+      <button id="showSignup" class="auth-tab active" type="button">Crear cuenta</button>
+      <button id="showLogin" class="auth-tab" type="button">Ya tengo cuenta</button>
+    </div>
+
+    <div id="signupView" class="auth-view">
+      <h2>Crear cuenta</h2>
+      <p class="muted">Regístrate antes de entrar al catálogo. Tu progreso quedará asociado a tu cuenta.</p>
+      <label class="auth-label" for="regUsername">Nombre de usuario</label>
+      <input class="field auth-field" id="regUsername" maxlength="24" placeholder="Ej. underfriki" autocomplete="username">
+      <label class="auth-label" for="regEmail">Email</label>
+      <input class="field auth-field" id="regEmail" type="email" placeholder="tu@email.com" autocomplete="email">
+      <label class="auth-label" for="regPassword">Contraseña</label>
+      <input class="field auth-field" id="regPassword" type="password" minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      <button id="signupBtn" class="primary auth-submit" type="button">Crear mi cuenta</button>
+      <div id="signupMessage" class="auth-message"></div>
+      <p class="auth-footnote">Si ya habías marcado cartas en este navegador, las conservaremos y se copiarán a tu cuenta cuando entres por primera vez.</p>
+    </div>
+
+    <div id="loginView" class="auth-view" hidden>
+      <h2>Iniciar sesión</h2>
+      <p class="muted">Entra para ver y editar tu colección.</p>
+      <label class="auth-label" for="loginEmail">Email</label>
+      <input class="field auth-field" id="loginEmail" type="email" placeholder="tu@email.com" autocomplete="email">
+      <label class="auth-label" for="loginPassword">Contraseña</label>
+      <input class="field auth-field" id="loginPassword" type="password" placeholder="Tu contraseña" autocomplete="current-password">
+      <button id="loginBtn" class="primary auth-submit" type="button">Entrar al catálogo</button>
+      <div id="loginMessage" class="auth-message"></div>
+    </div>
   </div>
-  <div id="sessionPill" class="session-pill">Sin iniciar sesión</div>
-</header>
+</section>
 
-<main class="wrap">
-  <section class="panel" id="authPanel">
-    <div class="panel-title">
-      <div>
-        <strong>Tu cuenta</strong>
-        <div class="muted">Tu colección queda asociada a tu usuario y solo tú puedes modificarla.</div>
-      </div>
+<div id="appShell" hidden>
+  <header>
+    <div>
+      <h1>🐉 Dragon Ball Daima · Panini</h1>
+      <small>207 cartas · 407 variantes · colección por usuario</small>
     </div>
+    <div id="sessionPill" class="session-pill online">Conectado</div>
+  </header>
 
-    <div id="signedOut">
-      <div class="auth-grid">
-        <input class="field" id="username" maxlength="24" placeholder="Nombre de usuario (solo para registro)" autocomplete="username">
-        <input class="field" id="email" type="email" placeholder="Email" autocomplete="email">
-        <input class="field" id="password" type="password" minlength="6" placeholder="Contraseña" autocomplete="current-password">
-        <button id="loginBtn">Entrar</button>
-        <button id="signupBtn" class="primary">Crear cuenta</button>
-      </div>
-      <div class="hint">Cuando entres por primera vez, la app importará automáticamente lo que ya tengas marcado en este navegador si tu cuenta todavía está vacía.</div>
-    </div>
-
-    <div id="signedIn" hidden>
+  <main class="wrap">
+    <section class="panel account-panel">
       <div class="signed-row">
         <div>
-          <b id="currentUsername">Usuario</b>
+          <div><strong id="currentUsername">Usuario</strong></div>
           <span class="muted" id="currentEmail"></span>
+          <div id="syncMessage" class="hint"></div>
         </div>
         <button id="logoutBtn">Cerrar sesión</button>
       </div>
-      <div id="syncMessage" class="hint"></div>
-    </div>
-  </section>
+    </section>
 
-  <section class="panel">
-    <div class="progress-head">
-      <strong id="pct">0%</strong>
-      <span class="muted"><b id="owned">0</b> / 407 variantes</span>
-    </div>
-    <div class="progress"><i id="bar"></i></div>
-    <div class="stats">
-      <div class="stat"><b id="missing">407</b><span>pendientes</span></div>
-      <div class="stat"><b id="complete">0</b><span>cartas completas</span></div>
-      <div class="stat"><b id="dups">0</b><span>repetidas</span></div>
-      <div class="stat"><b id="basic">0 / 207</b><span>básicas</span></div>
-      <div class="stat"><b id="crystal">0 / 100</b><span>cristal</span></div>
-      <div class="stat"><b id="rainbow">0 / 100</b><span>arcoíris</span></div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="tools">
-      <input class="field" id="q" placeholder="Buscar carta nº...">
-      <select class="field" id="status">
-        <option value="all">Todas</option>
-        <option value="missing">Con pendientes</option>
-        <option value="owned">Tengo alguna</option>
-        <option value="complete">Completas</option>
-        <option value="dups">Con repetidas</option>
-      </select>
-      <select class="field" id="variant">
-        <option value="all">Todas las variantes</option>
-        <option value="basic">Básica</option>
-        <option value="crystal">Cristal</option>
-        <option value="rainbow">Arcoíris</option>
-      </select>
-      <select class="field" id="category">
-        <option value="all">Todas las categorías</option>
-        <option>Base Cards</option>
-        <option>Puzzle Cards</option>
-        <option>Episode / Highlight Cards</option>
-        <option>Lenticular Cards</option>
-      </select>
-    </div>
-    <div class="actions">
-      <button id="export">Exportar copia</button>
-      <button id="import">Importar copia</button>
-      <input id="file" type="file" accept=".json" hidden>
-    </div>
-  </section>
-
-  <section class="panel compare-panel" id="comparePanel">
-    <div class="panel-title">
-      <div>
-        <strong>Comparar con otros coleccionistas</strong>
-        <div class="muted">Mira qué tiene otra persona que te falta, qué tienes tú que le falta y qué repetidas podrían intercambiarse.</div>
+    <section class="panel">
+      <div class="progress-head">
+        <strong id="pct">0%</strong>
+        <span class="muted"><b id="owned">0</b> / 407 variantes</span>
       </div>
-      <select class="field" id="compareUser" disabled>
-        <option value="">Selecciona un usuario</option>
-      </select>
-    </div>
-    <div id="compareLocked" class="hint">Inicia sesión para comparar colecciones.</div>
-    <div id="compareResults" hidden>
-      <div class="compare-summary">
-        <div class="stat"><b id="theirsMissingCount">0</b><span>tiene y tú no</span></div>
-        <div class="stat"><b id="mineMissingCount">0</b><span>tienes y no tiene</span></div>
-        <div class="stat"><b id="theirTradesCount">0</b><span>repetidas suyas que te faltan</span></div>
-        <div class="stat"><b id="myTradesCount">0</b><span>repetidas tuyas que le faltan</span></div>
+      <div class="progress"><i id="bar"></i></div>
+      <div class="stats">
+        <div class="stat"><b id="missing">407</b><span>pendientes</span></div>
+        <div class="stat"><b id="complete">0</b><span>cartas completas</span></div>
+        <div class="stat"><b id="dups">0</b><span>repetidas</span></div>
+        <div class="stat"><b id="basic">0 / 207</b><span>básicas</span></div>
+        <div class="stat"><b id="crystal">0 / 100</b><span>cristal</span></div>
+        <div class="stat"><b id="rainbow">0 / 100</b><span>arcoíris</span></div>
       </div>
-      <div class="compare-columns">
+    </section>
+
+    <section class="panel">
+      <div class="tools">
+        <input class="field" id="q" placeholder="Buscar carta nº...">
+        <select class="field" id="status">
+          <option value="all">Todas</option>
+          <option value="missing">Con pendientes</option>
+          <option value="owned">Tengo alguna</option>
+          <option value="complete">Completas</option>
+          <option value="dups">Con repetidas</option>
+        </select>
+        <select class="field" id="variant">
+          <option value="all">Todas las variantes</option>
+          <option value="basic">Básica</option>
+          <option value="crystal">Cristal</option>
+          <option value="rainbow">Arcoíris</option>
+        </select>
+        <select class="field" id="category">
+          <option value="all">Todas las categorías</option>
+          <option>Base Cards</option>
+          <option>Puzzle Cards</option>
+          <option>Episode / Highlight Cards</option>
+          <option>Lenticular Cards</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button id="export">Exportar copia</button>
+        <button id="import">Importar copia</button>
+        <input id="file" type="file" accept=".json" hidden>
+      </div>
+    </section>
+
+    <section class="panel compare-panel" id="comparePanel">
+      <div class="panel-title">
         <div>
-          <h3>Ellos tienen y tú no</h3>
-          <div id="theirsMissing" class="compare-list"></div>
+          <strong>Comparar con otros coleccionistas</strong>
+          <div class="muted">Mira qué tiene otra persona que te falta, qué tienes tú que le falta y qué repetidas podrían intercambiarse.</div>
         </div>
-        <div>
-          <h3>Tú tienes y ellos no</h3>
-          <div id="mineMissing" class="compare-list"></div>
+        <select class="field" id="compareUser">
+          <option value="">Selecciona un usuario</option>
+        </select>
+      </div>
+      <div id="compareResults" hidden>
+        <div class="compare-summary">
+          <div class="stat"><b id="theirsMissingCount">0</b><span>tiene y tú no</span></div>
+          <div class="stat"><b id="mineMissingCount">0</b><span>tienes y no tiene</span></div>
+          <div class="stat"><b id="theirTradesCount">0</b><span>repetidas suyas que te faltan</span></div>
+          <div class="stat"><b id="myTradesCount">0</b><span>repetidas tuyas que le faltan</span></div>
         </div>
-        <div>
-          <h3>Te podrían ofrecer</h3>
-          <div id="theirTrades" class="compare-list"></div>
-        </div>
-        <div>
-          <h3>Les podrías ofrecer</h3>
-          <div id="myTrades" class="compare-list"></div>
+        <div class="compare-columns">
+          <div><h3>Ellos tienen y tú no</h3><div id="theirsMissing" class="compare-list"></div></div>
+          <div><h3>Tú tienes y ellos no</h3><div id="mineMissing" class="compare-list"></div></div>
+          <div><h3>Te podrían ofrecer</h3><div id="theirTrades" class="compare-list"></div></div>
+          <div><h3>Les podrías ofrecer</h3><div id="myTrades" class="compare-list"></div></div>
         </div>
       </div>
+    </section>
+
+    <div id="grid" class="grid"><div class="empty">Cargando catálogo…</div></div>
+
+    <div class="footer">
+      Imágenes y catálogo de referencia:
+      <a href="https://dragonball.center/catalogo/coleccion/1285/dragon-ball-daima---trading-card-collection" target="_blank" rel="noopener">Dragon Ball Center</a>.
     </div>
-  </section>
-
-  <div id="editNotice" class="edit-notice">Inicia sesión para poder marcar, desmarcar o añadir repetidas.</div>
-  <div id="grid" class="grid"><div class="empty">Cargando catálogo…</div></div>
-
-  <div class="footer">
-    Imágenes y catálogo de referencia:
-    <a href="https://dragonball.center/catalogo/coleccion/1285/dragon-ball-daima---trading-card-collection" target="_blank" rel="noopener">Dragon Ball Center</a>.
-  </div>
-</main>
+  </main>
+</div>
 
 <script type="module" src="app.js"></script>
 </body>
