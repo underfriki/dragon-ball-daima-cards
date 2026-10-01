@@ -1,31 +1,148 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111"><title>Dragon Ball Daima · Colección Panini</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#0d0b09;color:#fff7ed;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif}header{position:sticky;top:0;z-index:5;background:#111d;border-bottom:1px solid #4a3829;padding:12px 16px}h1{margin:0;font-size:20px}small,.muted{color:#b9aa9a}.wrap{max-width:1400px;margin:auto;padding:14px}.panel{background:#18130f;border:1px solid #443326;border-radius:14px;padding:14px;margin-bottom:10px}.progress{height:10px;background:#32261d;border-radius:20px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,#f7bd35,#ff7226);width:0}.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}.stat{background:#100d0b;border:1px solid #35281f;border-radius:10px;padding:9px}.stat b{display:block;font-size:19px}.stat span{font-size:10px;color:#b9aa9a}.tools{display:grid;grid-template-columns:1fr repeat(3,minmax(135px,.5fr));gap:8px}.field,button{border:1px solid #49372a;background:#17120f;color:#fff7ed;border-radius:9px;padding:10px}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}button{cursor:pointer}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.card{background:#17130f;border:1px solid #443326;border-radius:13px;overflow:hidden}.card.complete{border-color:#2e8a5c}.img{aspect-ratio:565/800;background:#090909;display:flex}.card.landscape .img{aspect-ratio:4/3}.img img{width:100%;height:100%;object-fit:contain}.body{padding:10px}.n{font-weight:900;color:#ffc043;font-size:18px}.cat{font-size:10px;color:#b9aa9a}.checks{display:grid;gap:6px;margin-top:8px}.check{display:flex;align-items:center;gap:7px;background:#0f0d0b;border:1px solid #35281f;border-radius:8px;padding:7px}.check input{width:18px;height:18px;accent-color:#38d27e}.check label{flex:1;font-size:12px}.rep{display:flex;align-items:center;gap:4px}.rep button{width:28px;height:28px;padding:0;font-weight:900}.rep b{min-width:22px;text-align:center;color:#ffc043}.empty{grid-column:1/-1;padding:50px;text-align:center;color:#b9aa9a}.footer{text-align:center;color:#9f9284;font-size:11px;margin:18px 0}.footer a{color:inherit}@media(max-width:780px){.stats{grid-template-columns:1fr 1fr 1fr}.tools{grid-template-columns:1fr 1fr}.tools input{grid-column:1/-1}}@media(max-width:520px){.wrap{padding:9px}.grid{grid-template-columns:1fr 1fr;gap:7px}.stats{grid-template-columns:1fr 1fr}.tools{grid-template-columns:1fr}.body{padding:8px}}@media(max-width:350px){.grid{grid-template-columns:1fr}}
-</style></head><body>
-<header><h1>🐉 Dragon Ball Daima · Panini</h1><small>207 cartas · 407 variantes</small></header>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111">
+  <title>Dragon Ball Daima · Colección Panini</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>🐉 Dragon Ball Daima · Panini</h1>
+    <small>207 cartas · 407 variantes · colección por usuario</small>
+  </div>
+  <div id="sessionPill" class="session-pill">Sin iniciar sesión</div>
+</header>
+
 <main class="wrap">
-<section class="panel"><div style="display:flex;align-items:end;gap:10px"><strong id="pct" style="font-size:42px">0%</strong><span class="muted"><b id="owned">0</b> / 407 variantes</span></div><div class="progress"><i id="bar"></i></div><div class="stats"><div class="stat"><b id="missing">407</b><span>pendientes</span></div><div class="stat"><b id="complete">0</b><span>completas</span></div><div class="stat"><b id="dups">0</b><span>repetidas</span></div><div class="stat"><b id="basic">0/207</b><span>básicas</span></div><div class="stat"><b id="crystal">0/100</b><span>cristal</span></div><div class="stat"><b id="rainbow">0/100</b><span>arcoíris</span></div></div></section>
-<section class="panel"><div class="tools"><input class="field" id="q" placeholder="Buscar carta nº..."><select class="field" id="status"><option value="all">Todas</option><option value="missing">Con pendientes</option><option value="owned">Tengo alguna</option><option value="complete">Completas</option><option value="dups">Con repetidas</option></select><select class="field" id="variant"><option value="all">Todas las variantes</option><option value="basic">Básica</option><option value="crystal">Cristal</option><option value="rainbow">Arcoíris</option></select><select class="field" id="category"><option value="all">Todas las categorías</option><option>Base Cards</option><option>Puzzle Cards</option><option>Episode / Highlight Cards</option><option>Lenticular Cards</option></select></div><div class="actions"><button id="export">Exportar copia</button><button id="import">Importar</button><button id="reset">Reiniciar</button><input id="file" type="file" accept=".json" hidden></div></section>
-<div id="grid" class="grid"><div class="empty">Cargando imágenes…</div></div>
-<div class="footer">Imágenes y catálogo: <a href="https://dragonball.center/catalogo/coleccion/1285/dragon-ball-daima---trading-card-collection" target="_blank" rel="noopener">Dragon Ball Center</a> · referencia indicada allí bajo CC-BY-NC-SA.</div>
+  <section class="panel" id="authPanel">
+    <div class="panel-title">
+      <div>
+        <strong>Tu cuenta</strong>
+        <div class="muted">Tu colección queda asociada a tu usuario y solo tú puedes modificarla.</div>
+      </div>
+    </div>
+
+    <div id="signedOut">
+      <div class="auth-grid">
+        <input class="field" id="username" maxlength="24" placeholder="Nombre de usuario (solo para registro)" autocomplete="username">
+        <input class="field" id="email" type="email" placeholder="Email" autocomplete="email">
+        <input class="field" id="password" type="password" minlength="6" placeholder="Contraseña" autocomplete="current-password">
+        <button id="loginBtn">Entrar</button>
+        <button id="signupBtn" class="primary">Crear cuenta</button>
+      </div>
+      <div class="hint">Cuando entres por primera vez, la app importará automáticamente lo que ya tengas marcado en este navegador si tu cuenta todavía está vacía.</div>
+    </div>
+
+    <div id="signedIn" hidden>
+      <div class="signed-row">
+        <div>
+          <b id="currentUsername">Usuario</b>
+          <span class="muted" id="currentEmail"></span>
+        </div>
+        <button id="logoutBtn">Cerrar sesión</button>
+      </div>
+      <div id="syncMessage" class="hint"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="progress-head">
+      <strong id="pct">0%</strong>
+      <span class="muted"><b id="owned">0</b> / 407 variantes</span>
+    </div>
+    <div class="progress"><i id="bar"></i></div>
+    <div class="stats">
+      <div class="stat"><b id="missing">407</b><span>pendientes</span></div>
+      <div class="stat"><b id="complete">0</b><span>cartas completas</span></div>
+      <div class="stat"><b id="dups">0</b><span>repetidas</span></div>
+      <div class="stat"><b id="basic">0 / 207</b><span>básicas</span></div>
+      <div class="stat"><b id="crystal">0 / 100</b><span>cristal</span></div>
+      <div class="stat"><b id="rainbow">0 / 100</b><span>arcoíris</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="tools">
+      <input class="field" id="q" placeholder="Buscar carta nº...">
+      <select class="field" id="status">
+        <option value="all">Todas</option>
+        <option value="missing">Con pendientes</option>
+        <option value="owned">Tengo alguna</option>
+        <option value="complete">Completas</option>
+        <option value="dups">Con repetidas</option>
+      </select>
+      <select class="field" id="variant">
+        <option value="all">Todas las variantes</option>
+        <option value="basic">Básica</option>
+        <option value="crystal">Cristal</option>
+        <option value="rainbow">Arcoíris</option>
+      </select>
+      <select class="field" id="category">
+        <option value="all">Todas las categorías</option>
+        <option>Base Cards</option>
+        <option>Puzzle Cards</option>
+        <option>Episode / Highlight Cards</option>
+        <option>Lenticular Cards</option>
+      </select>
+    </div>
+    <div class="actions">
+      <button id="export">Exportar copia</button>
+      <button id="import">Importar copia</button>
+      <input id="file" type="file" accept=".json" hidden>
+    </div>
+  </section>
+
+  <section class="panel compare-panel" id="comparePanel">
+    <div class="panel-title">
+      <div>
+        <strong>Comparar con otros coleccionistas</strong>
+        <div class="muted">Mira qué tiene otra persona que te falta, qué tienes tú que le falta y qué repetidas podrían intercambiarse.</div>
+      </div>
+      <select class="field" id="compareUser" disabled>
+        <option value="">Selecciona un usuario</option>
+      </select>
+    </div>
+    <div id="compareLocked" class="hint">Inicia sesión para comparar colecciones.</div>
+    <div id="compareResults" hidden>
+      <div class="compare-summary">
+        <div class="stat"><b id="theirsMissingCount">0</b><span>tiene y tú no</span></div>
+        <div class="stat"><b id="mineMissingCount">0</b><span>tienes y no tiene</span></div>
+        <div class="stat"><b id="theirTradesCount">0</b><span>repetidas suyas que te faltan</span></div>
+        <div class="stat"><b id="myTradesCount">0</b><span>repetidas tuyas que le faltan</span></div>
+      </div>
+      <div class="compare-columns">
+        <div>
+          <h3>Ellos tienen y tú no</h3>
+          <div id="theirsMissing" class="compare-list"></div>
+        </div>
+        <div>
+          <h3>Tú tienes y ellos no</h3>
+          <div id="mineMissing" class="compare-list"></div>
+        </div>
+        <div>
+          <h3>Te podrían ofrecer</h3>
+          <div id="theirTrades" class="compare-list"></div>
+        </div>
+        <div>
+          <h3>Les podrías ofrecer</h3>
+          <div id="myTrades" class="compare-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="editNotice" class="edit-notice">Inicia sesión para poder marcar, desmarcar o añadir repetidas.</div>
+  <div id="grid" class="grid"><div class="empty">Cargando catálogo…</div></div>
+
+  <div class="footer">
+    Imágenes y catálogo de referencia:
+    <a href="https://dragonball.center/catalogo/coleccion/1285/dragon-ball-daima---trading-card-collection" target="_blank" rel="noopener">Dragon Ball Center</a>.
+  </div>
 </main>
-<script>
-const K="db-daima-checklist-imagenes-v2", $=x=>document.getElementById(x); let C=[];
-const vars=n=>n<=100?["basic","crystal","rainbow"]:["basic"];
-function fresh(){let s={};for(let n=1;n<=207;n++){s[n]={basic:{owned:false,duplicates:0}};if(n<=100){s[n].crystal={owned:false,duplicates:0};s[n].rainbow={owned:false,duplicates:0}}}return s}
-function norm(v){if(typeof v==="boolean")return{owned:v,duplicates:0};if(typeof v==="number")return{owned:v>0,duplicates:Math.max(0,v-1)};return v&&typeof v==="object"?{owned:!!v.owned||(v.duplicates||0)>0,duplicates:Math.max(0,Number(v.duplicates)||0)}:{owned:false,duplicates:0}}
-function load(src){let s=fresh();if(src)for(let n=1;n<=207;n++){let x=src[n]||src[String(n)];if(x)for(let v of Object.keys(s[n]))s[n][v]=norm(x[v])}return s}
-let S;try{S=load(JSON.parse(localStorage.getItem(K)||"null"))}catch{S=fresh()}function save(){localStorage.setItem(K,JSON.stringify(S))}
-const has=(n,v)=>!!S[n][v].owned, dup=(n,v)=>Math.max(0,Number(S[n][v].duplicates)||0), done=n=>vars(n).every(v=>has(n,v)), any=n=>vars(n).some(v=>has(n,v)), miss=n=>vars(n).some(v=>!has(n,v)), hasDup=n=>vars(n).some(v=>dup(n,v)>0);
-function totals(){let u=0,d=0,b=0,c=0,r=0,co=0;for(let n=1;n<=207;n++){if(done(n))co++;for(let v of vars(n)){if(has(n,v)){u++;if(v==="basic")b++;else if(v==="crystal")c++;else r++}d+=dup(n,v)}}return{u,d,b,c,r,co}}
-function stat(){let t=totals(),p=Math.round(t.u/407*100);$("pct").textContent=p+"%";$("owned").textContent=t.u;$("missing").textContent=407-t.u;$("complete").textContent=t.co;$("dups").textContent=t.d;$("basic").textContent=t.b+"/207";$("crystal").textContent=t.c+"/100";$("rainbow").textContent=t.r+"/100";$("bar").style.width=t.u/407*100+"%"}
-function label(n,v){return n>100?"Tengo":v==="basic"?"Básica":v==="crystal"?"Cristal":"Arcoíris"}
-function row(n,v){return '<div class="check"><input type="checkbox" data-n="'+n+'" data-v="'+v+'" '+(has(n,v)?"checked":"")+'><label>'+label(n,v)+'</label><div class="rep"><button data-m="'+n+':'+v+'" '+(dup(n,v)<1?"disabled":"")+'>−</button><b>'+dup(n,v)+'</b><button data-p="'+n+':'+v+'">+</button></div></div>'}
-function filtered(){let q=$("q").value.trim(),st=$("status").value,vf=$("variant").value,ca=$("category").value;return C.filter(c=>(!q||String(c.number).includes(q))&&(ca==="all"||c.category===ca)&&(vf==="all"||vars(c.number).includes(vf))&&(st==="all"||st==="missing"&&miss(c.number)||st==="owned"&&any(c.number)||st==="complete"&&done(c.number)||st==="dups"&&hasDup(c.number)))}
-function render(){stat();let vf=$("variant").value,a=filtered();$("grid").innerHTML=a.length?a.map(c=>'<article class="card '+(done(c.number)?"complete ":"")+(c.landscape?"landscape":"")+'"><div class="img"><img loading="lazy" src="'+c.image+'" alt="Carta '+c.number+'"></div><div class="body"><div class="n">#'+String(c.number).padStart(3,"0")+'</div><div class="cat">'+c.category+'</div><div class="checks">'+vars(c.number).filter(v=>vf==="all"||v===vf).map(v=>row(c.number,v)).join("")+'</div></div></article>').join(""):'<div class="empty">No hay resultados.</div>'}
-$("grid").onchange=e=>{let x=e.target.closest("input[data-n]");if(!x)return;let n=+x.dataset.n,v=x.dataset.v;S[n][v].owned=x.checked;if(!x.checked)S[n][v].duplicates=0;save();render()};$("grid").onclick=e=>{let p=e.target.closest("[data-p]"),m=e.target.closest("[data-m]"),x=p||m;if(!x)return;let z=(p?p.dataset.p:m.dataset.m).split(":"),n=+z[0],v=z[1];if(p){S[n][v].owned=true;S[n][v].duplicates++}else S[n][v].duplicates=Math.max(0,S[n][v].duplicates-1);save();render()};
-["q","status","variant","category"].forEach(id=>$(id).addEventListener(id==="q"?"input":"change",render));
-$("export").onclick=()=>{let b=new Blob([JSON.stringify({state:S},null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="dragon-ball-daima-coleccion.json";a.click();URL.revokeObjectURL(u)};$("import").onclick=()=>$("file").click();$("file").onchange=async e=>{try{let d=JSON.parse(await e.target.files[0].text());S=load(d.state||d.counts||d.collection||d);save();render()}catch{alert("Archivo no válido")}e.target.value=""};$("reset").onclick=()=>{if(confirm("¿Borrar todos los checks y repetidas?")){S=fresh();save();render()}};
-fetch("catalog.json",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{C=d;render()}).catch(()=>{$("grid").innerHTML='<div class="empty">El catálogo todavía se está generando. Recarga la página en un minuto.</div>'});
-</script></body></html>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
