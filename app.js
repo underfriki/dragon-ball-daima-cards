@@ -160,18 +160,17 @@ async function loadUsers(){
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
 function renderSession(){
   const signed=canEdit();
-  $("signedOut").hidden=signed; $("signedIn").hidden=!signed; $("compareLocked").hidden=signed;
-  $("sessionPill").classList.toggle("online",signed);
-  $("sessionPill").textContent=signed?(profile?.username||session.user.email||"Conectado"):"Sin iniciar sesión";
-  if(signed){$("currentUsername").textContent=profile?.username||"Usuario"; $("currentEmail").textContent=session.user.email||"";}
-  $("compareUser").disabled=!signed;
-  if(!signed){$("compareResults").hidden=true;$("compareUser").innerHTML='<option value="">Selecciona un usuario</option>';}
+  $("authGate").hidden=signed;
+  $("appShell").hidden=!signed;
+  if(!signed){
+    $("compareResults").hidden=true;
+    $("compareUser").innerHTML='<option value="">Selecciona un usuario</option>';
+    return;
+  }
+  $("sessionPill").textContent=profile?.username||session.user.email||"Conectado";
+  $("currentUsername").textContent=profile?.username||"Usuario";
+  $("currentEmail").textContent=session.user.email||"";
   renderGrid();
-}
-async function handleSession(newSession){
-  session=newSession; profile=null;
-  if(session?.user){await loadProfile();renderSession();await syncAccount();await loadUsers();}
-  else renderSession();
 }
 function objectFromRows(rows){
   const o={};
@@ -232,34 +231,94 @@ $("file").onchange=async e=>{
   e.target.value="";
 };
 
+function setAuthMode(mode){
+  const signup=mode==="signup";
+  $("signupView").hidden=!signup;
+  $("loginView").hidden=signup;
+  $("showSignup").classList.toggle("active",signup);
+  $("showLogin").classList.toggle("active",!signup);
+  $("signupMessage").textContent="";
+  $("loginMessage").textContent="";
+}
+$("showSignup").onclick=()=>setAuthMode("signup");
+$("showLogin").onclick=()=>setAuthMode("login");
+
 $("loginBtn").onclick=async()=>{
   if(!backendReady)return toast("El registro de usuarios todavía no está conectado al servidor.",true);
-  const email=$("email").value.trim(),password=$("password").value;
+  const email=$("loginEmail").value.trim(),password=$("loginPassword").value;
+  $("loginMessage").textContent="";
+  if(!email||!password){$("loginMessage").textContent="Escribe tu email y contraseña.";return;}
+  $("loginBtn").disabled=true;
   const {error}=await supabase.auth.signInWithPassword({email,password});
-  if(error)toast(error.message,true);
+  $("loginBtn").disabled=false;
+  if(error){$("loginMessage").textContent="No se pudo iniciar sesión. Revisa tus datos.";return;}
 };
 $("signupBtn").onclick=async()=>{
   if(!backendReady)return toast("El registro de usuarios todavía no está conectado al servidor.",true);
-  const username=$("username").value.trim(),email=$("email").value.trim(),password=$("password").value;
-  if(username.length<3)return toast("El nombre de usuario debe tener al menos 3 caracteres.",true);
-  const {data,error}=await supabase.auth.signUp({email,password,options:{data:{username}}});
-  if(error)return toast(error.message,true);
-  if(!data.session)toast("Cuenta creada. Revisa tu email si Supabase solicita confirmación.");
-  else toast("Cuenta creada.");
+  const username=$("regUsername").value.trim(),email=$("regEmail").value.trim(),password=$("regPassword").value;
+  $("signupMessage").textContent="";
+  if(username.length<3){$("signupMessage").textContent="El nombre de usuario debe tener al menos 3 caracteres.";return;}
+  if(!email){$("signupMessage").textContent="Escribe un email válido.";return;}
+  if(password.length<6){$("signupMessage").textContent="La contraseña debe tener al menos 6 caracteres.";return;}
+  $("signupBtn").disabled=true;
+  const {data,error}=await supabase.auth.signUp({
+    email,
+    password,
+    options:{
+      data:{username},
+      emailRedirectTo:location.origin+location.pathname
+    }
+  });
+  $("signupBtn").disabled=false;
+  if(error){
+    $("signupMessage").textContent=error.message.toLowerCase().includes("duplicate")||error.message.toLowerCase().includes("already")
+      ?"Ese email o nombre de usuario ya está registrado."
+      :"No se pudo crear la cuenta: "+error.message;
+    return;
+  }
+  if(!data.session){
+    $("signupMessage").textContent="Cuenta creada. Revisa tu email para confirmar y después inicia sesión.";
+  }else{
+    $("signupMessage").textContent="Cuenta creada. Entrando al catálogo…";
+  }
 };
 $("logoutBtn").onclick=async()=>{if(supabase)await supabase.auth.signOut()};
 
-async function boot(){
+async function loadCatalog(){
+  if(catalog.length)return;
   try{
-    const r=await fetch("catalog.json",{cache:"no-store"}); if(!r.ok)throw new Error(); catalog=await r.json();
-  }catch{$("grid").innerHTML='<div class="empty">No se pudo cargar el catálogo.</div>';return;}
-  renderGrid();
+    const r=await fetch("catalog.json",{cache:"no-store"});
+    if(!r.ok)throw new Error();
+    catalog=await r.json();
+  }catch{
+    $("grid").innerHTML='<div class="empty">No se pudo cargar el catálogo.</div>';
+    throw new Error("catalog");
+  }
+}
+async function handleSession(newSession){
+  session=newSession; profile=null;
+  if(session?.user){
+    await loadCatalog();
+    await loadProfile();
+    renderSession();
+    await syncAccount();
+    await loadUsers();
+  }else{
+    renderSession();
+  }
+}
+async function boot(){
+  setAuthMode("signup");
   if(!backendReady){
-    $("authPanel").querySelector(".muted").textContent="La interfaz de usuarios está preparada, pero falta conectar la base de datos.";
-    $("signupBtn").disabled=true;$("loginBtn").disabled=true;
+    $("signupMessage").textContent="El servicio de usuarios no está disponible en este momento.";
+    $("signupBtn").disabled=true;
+    $("loginBtn").disabled=true;
     return;
   }
-  const {data:{session:initial}}=await supabase.auth.getSession(); await handleSession(initial);
-  supabase.auth.onAuthStateChange(async(_event,newSession)=>{if(newSession?.user?.id!==session?.user?.id||!newSession!==!session)await handleSession(newSession)});
+  const {data:{session:initial}}=await supabase.auth.getSession();
+  await handleSession(initial);
+  supabase.auth.onAuthStateChange(async(_event,newSession)=>{
+    if(newSession?.user?.id!==session?.user?.id||Boolean(newSession)!==Boolean(session))await handleSession(newSession);
+  });
 }
 boot();
