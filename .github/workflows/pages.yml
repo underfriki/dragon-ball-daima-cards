@@ -22,8 +22,6 @@ jobs:
       - run: mkdir -p site && cp index.html site/index.html
       - run: python scripts/fetch_cards.py
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
