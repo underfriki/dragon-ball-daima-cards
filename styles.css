@@ -20,3 +20,16 @@ h1{margin:0;font-size:20px}h3{font-size:14px;margin:0 0 8px}small,.muted{color:v
 @media(max-width:780px){.tools{grid-template-columns:1fr 1fr}.tools input{grid-column:1/-1}.compare-columns{grid-template-columns:1fr}.panel-title{align-items:flex-start;flex-direction:column}.compare-panel select{width:100%}}
 @media(max-width:520px){header{align-items:flex-start}.wrap{padding:9px}.grid{grid-template-columns:1fr 1fr;gap:7px}.stats,.compare-summary{grid-template-columns:1fr 1fr}.tools,.auth-grid{grid-template-columns:1fr}.auth-grid input:first-child{grid-column:auto}.body{padding:8px}.session-pill{font-size:10px}}
 @media(max-width:350px){.grid{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+.auth-gate{min-height:100vh;display:grid;place-items:center;padding:24px;background:
+radial-gradient(circle at 20% 20%,#44240f 0,transparent 34%),
+radial-gradient(circle at 80% 15%,#503512 0,transparent 30%),
+linear-gradient(160deg,#090706,#17100b 55%,#0b0907)}
+.auth-card{width:min(100%,500px);background:#16110e;border:1px solid #4b3728;border-radius:22px;padding:24px;box-shadow:0 24px 80px #000a}
+.auth-brand{text-align:center;margin-bottom:22px}.auth-dragon{font-size:48px;line-height:1}.auth-brand h1{font-size:28px;margin:8px 0 4px}.auth-brand p{margin:0;color:var(--muted)}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:#0e0b09;border:1px solid var(--border2);border-radius:12px;padding:4px;margin-bottom:20px}
+.auth-tab{border:0;background:transparent;color:var(--muted);padding:10px;border-radius:9px}.auth-tab.active{background:#2d2118;color:var(--text)}
+.auth-view h2{margin:0 0 6px;font-size:20px}.auth-view>p{margin-top:0}.auth-label{display:block;font-size:12px;font-weight:700;margin:12px 0 6px;color:#d9c8b8}
+.auth-field{width:100%;font-size:16px}.auth-submit{width:100%;margin-top:16px;padding:12px;font-weight:800}
+.auth-message{min-height:20px;margin-top:10px;font-size:12px;color:#ffcf73}.auth-footnote{font-size:11px!important;line-height:1.5;color:var(--muted);margin-top:14px!important}
+.account-panel{padding:10px 14px}
