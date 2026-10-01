@@ -93,7 +93,6 @@ function filtered(){
 function renderGrid(){
   renderStats();
   const vf=$("variant").value,a=filtered();
-  $("editNotice").classList.toggle("hidden",canEdit());
   $("grid").innerHTML=a.length?a.map(c=>`<article class="card ${complete(c.number)?"complete ":""}${c.landscape?"landscape ":""}${canEdit()?"":"readonly"}">
     <div class="img"><img loading="lazy" src="${c.image}" alt="Carta ${c.number}"></div>
     <div class="body"><div class="n">#${String(c.number).padStart(3,"0")}</div><div class="cat">${c.category}</div>
