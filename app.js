@@ -239,6 +239,7 @@ function setAuthMode(mode){
   $("showSignup").classList.toggle("active",signup);
   $("showLogin").classList.toggle("active",!signup);
   $("signupMessage").textContent="";
+  $("signupMessage").classList.remove("confirmation-notice");
   $("loginMessage").textContent="";
 }
 $("showSignup").onclick=()=>setAuthMode("signup");
@@ -265,6 +266,7 @@ $("signupBtn").onclick=async()=>{
   if(!backendReady)return toast("El registro de usuarios todavía no está conectado al servidor.",true);
   const username=$("regUsername").value.trim(),email=$("regEmail").value.trim(),password=$("regPassword").value;
   $("signupMessage").textContent="";
+  $("signupMessage").classList.remove("confirmation-notice");
   if(username.length<3){$("signupMessage").textContent="El nombre de usuario debe tener al menos 3 caracteres.";return;}
   if(!email||!$("regEmail").checkValidity()){$("signupMessage").textContent="Escribe un email válido.";return;}
   if(password.length<6){$("signupMessage").textContent="La contraseña debe tener al menos 6 caracteres.";return;}
@@ -286,7 +288,9 @@ $("signupBtn").onclick=async()=>{
     return;
   }
   if(!data.session){
-    $("signupMessage").textContent="Cuenta creada. Revisa tu email para confirmar y después inicia sesión.";
+    $("signupMessage").classList.add("confirmation-notice");
+    $("signupMessage").innerHTML='<strong>Recuerda revisar el correo</strong><span>Te hemos enviado un enlace para confirmar tu cuenta. Revisa también la carpeta de <b>SPAM o correo no deseado</b>.</span><span>Abre el enlace del correo y después inicia sesión para entrar al catálogo.</span>';
+    $("signupMessage").scrollIntoView({behavior:"smooth",block:"nearest"});
   }else{
     $("signupMessage").textContent="Cuenta creada. Entrando al catálogo…";
   }

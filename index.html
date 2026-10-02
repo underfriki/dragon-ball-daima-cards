@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111">
   <title>Dragon Ball Daima · Colección Panini</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261002-email">
 </head>
 <body>
 
@@ -32,7 +32,7 @@
       <label class="auth-label" for="regPassword">Contraseña</label>
       <input class="field auth-field" id="regPassword" type="password" minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
       <button id="signupBtn" class="primary auth-submit" type="button">Crear mi cuenta</button>
-      <div id="signupMessage" class="auth-message"></div>
+      <div id="signupMessage" class="auth-message" role="status" aria-live="polite"></div>
       <p class="auth-footnote">Si ya habías marcado cartas en este navegador, las conservaremos y se copiarán a tu cuenta cuando entres por primera vez.</p>
     </div>
 
@@ -158,6 +158,6 @@
   <p style="margin:8px 0 0">Esta web no tiene ninguna relación con Panini ni con Dragon Ball de forma oficial.</p>
 </footer>
 
-<script type="module" src="app.js?v=20261002-auth1"></script>
+<script type="module" src="app.js?v=20261002-email"></script>
 </body>
 </html>

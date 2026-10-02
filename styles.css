@@ -33,3 +33,5 @@ linear-gradient(160deg,#090706,#17100b 55%,#0b0907)}
 .auth-field{width:100%;font-size:16px}.auth-submit{width:100%;margin-top:16px;padding:12px;font-weight:800}
 .auth-message{min-height:20px;margin-top:10px;font-size:12px;color:#ffcf73}.auth-footnote{font-size:11px!important;line-height:1.5;color:var(--muted);margin-top:14px!important}
 .account-panel{padding:10px 14px}
+
+.confirmation-notice{padding:18px;margin-top:18px;border:2px solid #d99b32;border-radius:12px;background:#302211;color:#ffe1a1;line-height:1.5;font-size:16px}.confirmation-notice strong{display:block;font-size:22px;line-height:1.25;margin-bottom:10px}.confirmation-notice span{display:block;margin-top:8px}
