@@ -7,13 +7,15 @@ const backendReady=Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const supabase=backendReady?createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
 
 let catalog=[];
-let state=loadLocal();
+let state;
 let session=null;
 let profile=null;
 let otherUsers=[];
 
 const variants=n=>n<=100?["basic","crystal","rainbow"]:["basic"];
 const blankVariant=()=>({owned:false,duplicates:0});
+// Initialize saved progress only after its factories are ready.
+state=loadLocal();
 function fresh(){
   const s={};
   for(let n=1;n<=207;n++){
@@ -248,18 +250,27 @@ $("loginBtn").onclick=async()=>{
   $("loginMessage").textContent="";
   if(!email||!password){$("loginMessage").textContent="Escribe tu email y contraseña.";return;}
   $("loginBtn").disabled=true;
-  const {error}=await supabase.auth.signInWithPassword({email,password});
-  $("loginBtn").disabled=false;
-  if(error){$("loginMessage").textContent="No se pudo iniciar sesión. Revisa tus datos.";return;}
+  $("loginMessage").textContent="Iniciando sesión…";
+  try{
+    const {error}=await supabase.auth.signInWithPassword({email,password});
+    if(error)throw error;
+    $("loginMessage").textContent="Entrando al catálogo…";
+  }catch(error){
+    $("loginMessage").textContent=error.code==="email_not_confirmed"
+      ?"Confirma tu email antes de iniciar sesión. Revisa también la carpeta de spam."
+      :"No se pudo iniciar sesión: "+error.message;
+  }finally{$("loginBtn").disabled=false;}
 };
 $("signupBtn").onclick=async()=>{
   if(!backendReady)return toast("El registro de usuarios todavía no está conectado al servidor.",true);
   const username=$("regUsername").value.trim(),email=$("regEmail").value.trim(),password=$("regPassword").value;
   $("signupMessage").textContent="";
   if(username.length<3){$("signupMessage").textContent="El nombre de usuario debe tener al menos 3 caracteres.";return;}
-  if(!email){$("signupMessage").textContent="Escribe un email válido.";return;}
+  if(!email||!$("regEmail").checkValidity()){$("signupMessage").textContent="Escribe un email válido.";return;}
   if(password.length<6){$("signupMessage").textContent="La contraseña debe tener al menos 6 caracteres.";return;}
   $("signupBtn").disabled=true;
+  $("signupMessage").textContent="Creando tu cuenta…";
+  try{
   const {data,error}=await supabase.auth.signUp({
     email,
     password,
@@ -268,7 +279,6 @@ $("signupBtn").onclick=async()=>{
       emailRedirectTo:location.origin+location.pathname
     }
   });
-  $("signupBtn").disabled=false;
   if(error){
     $("signupMessage").textContent=error.message.toLowerCase().includes("duplicate")||error.message.toLowerCase().includes("already")
       ?"Ese email o nombre de usuario ya está registrado."
@@ -280,6 +290,9 @@ $("signupBtn").onclick=async()=>{
   }else{
     $("signupMessage").textContent="Cuenta creada. Entrando al catálogo…";
   }
+  }catch(error){
+    $("signupMessage").textContent="No se pudo crear la cuenta: "+error.message;
+  }finally{$("signupBtn").disabled=false;}
 };
 $("logoutBtn").onclick=async()=>{if(supabase)await supabase.auth.signOut()};
 
@@ -316,8 +329,20 @@ async function boot(){
   }
   const {data:{session:initial}}=await supabase.auth.getSession();
   await handleSession(initial);
-  supabase.auth.onAuthStateChange(async(_event,newSession)=>{
-    if(newSession?.user?.id!==session?.user?.id||Boolean(newSession)!==Boolean(session))await handleSession(newSession);
+  supabase.auth.onAuthStateChange((_event,newSession)=>{
+    // Supabase holds its auth lock while notifying listeners. Run database
+    // requests after the callback returns, otherwise sign-in can deadlock.
+    setTimeout(()=>{
+      if(newSession?.user?.id!==session?.user?.id||Boolean(newSession)!==Boolean(session)){
+        handleSession(newSession).catch(showSessionError);
+      }
+    },0);
   });
 }
-boot();
+function showSessionError(error){
+  const message="No se pudo cargar tu cuenta. Recarga la página para reintentarlo: "+error.message;
+  $("signupMessage").textContent=message;
+  $("loginMessage").textContent=message;
+  toast(message,true);
+}
+boot().catch(showSessionError);
