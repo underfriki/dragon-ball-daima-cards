@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111">
   <title>Dragon Ball Daima · Colección Panini</title>
-  <link rel="stylesheet" href="styles.css?v=20261002-email">
+  <link rel="stylesheet" href="styles.css?v=20261018-reset">
 </head>
 <body>
 
@@ -44,7 +44,29 @@
       <label class="auth-label" for="loginPassword">Contraseña</label>
       <input class="field auth-field" id="loginPassword" type="password" placeholder="Tu contraseña" autocomplete="current-password">
       <button id="loginBtn" class="primary auth-submit" type="button">Entrar al catálogo</button>
+      <button id="forgotLink" class="auth-link" type="button">He olvidado mi contraseña</button>
       <div id="loginMessage" class="auth-message"></div>
+    </div>
+
+    <div id="forgotView" class="auth-view" hidden>
+      <h2>Recuperar contraseña</h2>
+      <p class="muted">Escribe el email de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.</p>
+      <label class="auth-label" for="forgotEmail">Email</label>
+      <input class="field auth-field" id="forgotEmail" type="email" placeholder="tu@email.com" autocomplete="email">
+      <button id="forgotBtn" class="primary auth-submit" type="button">Enviar enlace de recuperación</button>
+      <button id="backToLoginFromForgot" class="auth-link" type="button">Volver a iniciar sesión</button>
+      <div id="forgotMessage" class="auth-message" role="status" aria-live="polite"></div>
+    </div>
+
+    <div id="recoveryView" class="auth-view" hidden>
+      <h2>Elige una contraseña nueva</h2>
+      <p class="muted">Introduce tu nueva contraseña para terminar la recuperación de la cuenta.</p>
+      <label class="auth-label" for="newPassword">Nueva contraseña</label>
+      <input class="field auth-field" id="newPassword" type="password" minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      <label class="auth-label" for="newPassword2">Repite la contraseña</label>
+      <input class="field auth-field" id="newPassword2" type="password" minlength="6" placeholder="Repite la nueva contraseña" autocomplete="new-password">
+      <button id="resetPasswordBtn" class="primary auth-submit" type="button">Guardar nueva contraseña</button>
+      <div id="recoveryMessage" class="auth-message" role="status" aria-live="polite"></div>
     </div>
   </div>
 </section>
@@ -158,6 +180,6 @@
   <p style="margin:8px 0 0">Esta web no tiene ninguna relación con Panini ni con Dragon Ball de forma oficial.</p>
 </footer>
 
-<script type="module" src="app.js?v=20261002-email"></script>
+<script type="module" src="app.js?v=20261018-reset"></script>
 </body>
 </html>
