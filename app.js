@@ -11,6 +11,7 @@ let state;
 let session=null;
 let profile=null;
 let otherUsers=[];
+let recoveryMode=false;
 
 const variants=n=>n<=100?["basic","crystal","rainbow"]:["basic"];
 const blankVariant=()=>({owned:false,duplicates:0});
@@ -161,6 +162,11 @@ async function loadUsers(){
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
 function renderSession(){
   const signed=canEdit();
+  if(recoveryMode){
+    $("authGate").hidden=false;
+    $("appShell").hidden=true;
+    return;
+  }
   $("authGate").hidden=signed;
   $("appShell").hidden=!signed;
   if(!signed){
@@ -233,17 +239,28 @@ $("file").onchange=async e=>{
 };
 
 function setAuthMode(mode){
-  const signup=mode==="signup";
+  const signup=mode==="signup",login=mode==="login",forgot=mode==="forgot",recovery=mode==="recovery";
   $("signupView").hidden=!signup;
-  $("loginView").hidden=signup;
+  $("loginView").hidden=!login;
+  $("forgotView").hidden=!forgot;
+  $("recoveryView").hidden=!recovery;
   $("showSignup").classList.toggle("active",signup);
-  $("showLogin").classList.toggle("active",!signup);
+  $("showLogin").classList.toggle("active",login);
+  $("authGate").hidden=false;
+  $("appShell").hidden=true;
   $("signupMessage").textContent="";
   $("signupMessage").classList.remove("confirmation-notice");
   $("loginMessage").textContent="";
+  $("forgotMessage").textContent="";
+  $("recoveryMessage").textContent="";
 }
 $("showSignup").onclick=()=>setAuthMode("signup");
 $("showLogin").onclick=()=>setAuthMode("login");
+$("forgotLink").onclick=()=>{
+  $("forgotEmail").value=$("loginEmail").value.trim();
+  setAuthMode("forgot");
+};
+$("backToLoginFromForgot").onclick=()=>setAuthMode("login");
 
 $("loginBtn").onclick=async()=>{
   if(!backendReady)return toast("El registro de usuarios todavía no está conectado al servidor.",true);
@@ -298,6 +315,57 @@ $("signupBtn").onclick=async()=>{
     $("signupMessage").textContent="No se pudo crear la cuenta: "+error.message;
   }finally{$("signupBtn").disabled=false;}
 };
+$("forgotBtn").onclick=async()=>{
+  if(!backendReady)return;
+  const email=$("forgotEmail").value.trim();
+  $("forgotMessage").textContent="";
+  if(!email||!$("forgotEmail").checkValidity()){
+    $("forgotMessage").textContent="Escribe un email válido.";
+    return;
+  }
+  $("forgotBtn").disabled=true;
+  $("forgotMessage").textContent="Enviando enlace…";
+  try{
+    const redirectTo=location.origin+location.pathname;
+    const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error)throw error;
+    $("forgotMessage").innerHTML="<strong>Revisa tu correo.</strong><br>Si existe una cuenta con ese email, recibirás un enlace para cambiar la contraseña. Revisa también spam o correo no deseado.";
+  }catch(error){
+    $("forgotMessage").textContent="No se pudo enviar el enlace: "+error.message;
+  }finally{
+    $("forgotBtn").disabled=false;
+  }
+};
+
+$("resetPasswordBtn").onclick=async()=>{
+  if(!backendReady||!recoveryMode)return;
+  const p1=$("newPassword").value,p2=$("newPassword2").value;
+  $("recoveryMessage").textContent="";
+  if(p1.length<6){
+    $("recoveryMessage").textContent="La contraseña debe tener al menos 6 caracteres.";
+    return;
+  }
+  if(p1!==p2){
+    $("recoveryMessage").textContent="Las contraseñas no coinciden.";
+    return;
+  }
+  $("resetPasswordBtn").disabled=true;
+  $("recoveryMessage").textContent="Guardando nueva contraseña…";
+  try{
+    const {error}=await supabase.auth.updateUser({password:p1});
+    if(error)throw error;
+    recoveryMode=false;
+    await supabase.auth.signOut();
+    setAuthMode("login");
+    $("loginMessage").textContent="Contraseña actualizada. Ya puedes iniciar sesión con la nueva contraseña.";
+    history.replaceState({},document.title,location.pathname);
+  }catch(error){
+    $("recoveryMessage").textContent="No se pudo cambiar la contraseña: "+error.message;
+  }finally{
+    $("resetPasswordBtn").disabled=false;
+  }
+};
+
 $("logoutBtn").onclick=async()=>{if(supabase)await supabase.auth.signOut()};
 
 async function loadCatalog(){
@@ -331,17 +399,34 @@ async function boot(){
     $("loginBtn").disabled=true;
     return;
   }
-  const {data:{session:initial}}=await supabase.auth.getSession();
-  await handleSession(initial);
-  supabase.auth.onAuthStateChange((_event,newSession)=>{
+
+  supabase.auth.onAuthStateChange((event,newSession)=>{
+    if(event==="PASSWORD_RECOVERY"){
+      recoveryMode=true;
+      session=newSession;
+      profile=null;
+      setAuthMode("recovery");
+      return;
+    }
     // Supabase holds its auth lock while notifying listeners. Run database
     // requests after the callback returns, otherwise sign-in can deadlock.
     setTimeout(()=>{
+      if(recoveryMode)return;
       if(newSession?.user?.id!==session?.user?.id||Boolean(newSession)!==Boolean(session)){
         handleSession(newSession).catch(showSessionError);
       }
     },0);
   });
+
+  const looksLikeRecovery=location.hash.includes("type=recovery");
+  const {data:{session:initial}}=await supabase.auth.getSession();
+  if(looksLikeRecovery){
+    recoveryMode=true;
+    session=initial;
+    setAuthMode("recovery");
+  }else{
+    await handleSession(initial);
+  }
 }
 function showSessionError(error){
   const message="No se pudo cargar tu cuenta. Recarga la página para reintentarlo: "+error.message;
