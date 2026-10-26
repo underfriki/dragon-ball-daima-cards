@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111">
   <title>Dragon Ball Daima · Colección Panini</title>
-  <link rel="stylesheet" href="styles.css?v=20261018-reset">
+  <link rel="stylesheet" href="styles.css?v=20261026-trades">
 </head>
 <body>
 
@@ -139,6 +139,53 @@
       </div>
     </section>
 
+
+    <section class="panel" id="matchesPanel">
+      <div class="panel-title">
+        <div>
+          <strong>🤝 Matches automáticos</strong>
+          <div class="muted">Usuarios que tienen repetidas que te faltan y a quienes tú también puedes ofrecer alguna repetida.</div>
+        </div>
+        <div class="panel-actions">
+          <span id="matchCount" class="badge">0 matches</span>
+          <button id="refreshMatchesBtn" type="button">Actualizar</button>
+        </div>
+      </div>
+      <div id="matchesList" class="match-list">
+        <div class="hint">Buscando coincidencias de intercambio…</div>
+      </div>
+    </section>
+
+    <section class="panel" id="tradesPanel">
+      <div class="panel-title">
+        <div>
+          <strong>📨 Solicitudes e intercambios</strong>
+          <div class="muted">Acepta o rechaza propuestas, abre el chat y marca un intercambio como completado.</div>
+        </div>
+        <span id="pendingTradeBadge" class="badge">0 pendientes</span>
+      </div>
+      <div id="tradeRequests" class="trade-request-list">
+        <div class="hint">Todavía no tienes solicitudes de intercambio.</div>
+      </div>
+    </section>
+
+    <section class="panel chat-panel" id="chatPanel" hidden>
+      <div class="panel-title">
+        <div>
+          <strong id="chatTitle">💬 Conversación</strong>
+          <div class="muted" id="chatSubtitle">Mensajería privada entre los dos coleccionistas.</div>
+        </div>
+        <button id="closeChatBtn" type="button">Cerrar chat</button>
+      </div>
+      <div id="chatOfferSummary" class="trade-offers compact"></div>
+      <div id="chatMessages" class="chat-messages"></div>
+      <div class="chat-compose">
+        <textarea id="chatInput" class="field" maxlength="1000" rows="2" placeholder="Escribe un mensaje…"></textarea>
+        <button id="sendMessageBtn" class="primary" type="button">Enviar</button>
+      </div>
+      <div id="chatHint" class="hint"></div>
+    </section>
+
     <section class="panel compare-panel" id="comparePanel">
       <div class="panel-title">
         <div>
@@ -162,6 +209,10 @@
           <div><h3>Te podrían ofrecer</h3><div id="theirTrades" class="compare-list"></div></div>
           <div><h3>Les podrías ofrecer</h3><div id="myTrades" class="compare-list"></div></div>
         </div>
+        <div class="compare-actions">
+          <button id="compareProposeBtn" class="primary" type="button" hidden>Proponer intercambio</button>
+          <span id="compareProposalHint" class="hint"></span>
+        </div>
       </div>
     </section>
 
@@ -180,6 +231,6 @@
   <p style="margin:8px 0 0">Esta web no tiene ninguna relación con Panini ni con Dragon Ball de forma oficial.</p>
 </footer>
 
-<script type="module" src="app.js?v=20261018-reset"></script>
+<script type="module" src="app.js?v=20261026-trades"></script>
 </body>
 </html>
