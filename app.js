@@ -174,6 +174,203 @@ async function loadUsers(){
   renderMatches();
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+function userName(userId){
+  if(userId===session?.user?.id)return profile?.username||"Tú";
+  return otherUsers.find(u=>u.id===userId)?.username||"Usuario";
+}
+function remoteCollection(userId){
+  const map=new Map();
+  for(const r of allCollections){
+    if(r.user_id===userId)map.set(r.card_number+":"+r.variant,{owned:!!r.owned,duplicates:Math.max(0,Number(r.duplicates)||0)});
+  }
+  return map;
+}
+function buildTradeMatch(userId){
+  const other=remoteCollection(userId),iOffer=[],theyOffer=[];
+  for(let n=1;n<=207;n++)for(const v of variants(n)){
+    const me=state[n][v],them=other.get(n+":"+v)||{owned:false,duplicates:0};
+    if(me.duplicates>0&&!them.owned)iOffer.push({n,v,d:me.duplicates});
+    if(them.duplicates>0&&!me.owned)theyOffer.push({n,v,d:them.duplicates});
+  }
+  return{userId,iOffer,theyOffer,score:iOffer.length+theyOffer.length};
+}
+function activeTradeWith(userId){
+  return trades.find(t=>["proposed","accepted"].includes(t.status)&&
+    ((t.from_user===session?.user?.id&&t.to_user===userId)||(t.to_user===session?.user?.id&&t.from_user===userId)));
+}
+function shortChips(items,limit=6){
+  if(!items.length)return'<span class="muted">Ninguna</span>';
+  const shown=items.slice(0,limit).map(x=>`<span class="chip trade">${itemText(x.n,x.v,x.d||0)}</span>`).join("");
+  return shown+(items.length>limit?`<span class="chip">+${items.length-limit} más</span>`:"");
+}
+function renderMatches(){
+  if(!canEdit())return;
+  const matches=otherUsers.map(u=>({...buildTradeMatch(u.id),username:u.username}))
+    .filter(m=>m.iOffer.length&&m.theyOffer.length)
+    .sort((a,b)=>b.score-a.score||a.username.localeCompare(b.username));
+  $("matchCount").textContent=matches.length+" "+(matches.length===1?"match":"matches");
+  $("matchesList").innerHTML=matches.length?matches.map(m=>{
+    const active=activeTradeWith(m.userId);
+    return `<article class="match-card">
+      <div class="match-head"><div><strong>${escapeHtml(m.username)}</strong><span class="match-score">${m.theyOffer.length} ↔ ${m.iOffer.length}</span></div>
+      <button class="primary" data-propose-user="${m.userId}" ${active?"disabled":""}>${active?"Solicitud activa":"Proponer intercambio"}</button></div>
+      <div class="match-columns">
+        <div><h3>Te puede ofrecer</h3><div class="compare-list">${shortChips(m.theyOffer)}</div></div>
+        <div><h3>Tú puedes ofrecer</h3><div class="compare-list">${shortChips(m.iOffer)}</div></div>
+      </div>
+    </article>`;
+  }).join(""):'<div class="hint">Ahora mismo no hay ningún match mutuo. Aparecerán aquí cuando otro usuario tenga una repetida que te falta y tú tengas una que le falte.</div>';
+  updateCompareProposal();
+}
+function statusLabel(status){
+  return({proposed:"Pendiente",accepted:"Aceptado",rejected:"Rechazado",cancelled:"Cancelado",completed:"Completado"})[status]||status;
+}
+function offerArray(arr){
+  return(Array.isArray(arr)?arr:[]).map(x=>({n:Number(x.card_number),v:x.variant,d:Number(x.duplicates)||0}));
+}
+function requestPerspective(t){
+  const mine=t.from_user===session?.user?.id;
+  return{
+    mine,
+    otherId:mine?t.to_user:t.from_user,
+    iOffer:offerArray(mine?t.from_offers:t.to_offers),
+    theyOffer:offerArray(mine?t.to_offers:t.from_offers)
+  };
+}
+function tradeActions(t){
+  const mine=t.from_user===session?.user?.id;
+  if(t.status==="proposed"){
+    if(mine)return `<button data-trade-action="cancelled" data-trade-id="${t.id}">Cancelar</button>`;
+    return `<button class="primary" data-trade-action="accepted" data-trade-id="${t.id}">Aceptar</button>
+      <button data-trade-action="rejected" data-trade-id="${t.id}">Rechazar</button>`;
+  }
+  if(t.status==="accepted")return `<button class="primary" data-open-chat="${t.id}">Abrir chat</button>
+    <button data-trade-action="completed" data-trade-id="${t.id}">Marcar completado</button>
+    <button data-trade-action="cancelled" data-trade-id="${t.id}">Cancelar</button>`;
+  if(t.status==="completed")return `<button data-open-chat="${t.id}">Ver conversación</button>`;
+  return "";
+}
+function renderTradeRequests(){
+  const incoming=trades.filter(t=>t.status==="proposed"&&t.to_user===session?.user?.id).length;
+  $("pendingTradeBadge").textContent=incoming+" "+(incoming===1?"pendiente":"pendientes");
+  $("tradeRequests").innerHTML=trades.length?trades.map(t=>{
+    const p=requestPerspective(t),name=escapeHtml(userName(p.otherId));
+    return `<article class="trade-request ${t.status}">
+      <div class="trade-request-head">
+        <div><strong>${name}</strong><span class="status ${t.status}">${statusLabel(t.status)}</span>
+        <div class="muted">${t.from_user===session.user.id?"Solicitud enviada":"Solicitud recibida"} · ${new Date(t.created_at).toLocaleDateString("es-ES")}</div></div>
+        <div class="trade-actions">${tradeActions(t)}</div>
+      </div>
+      <div class="trade-offers">
+        <div><h3>Te pueden ofrecer</h3><div class="compare-list">${shortChips(p.theyOffer,8)}</div></div>
+        <div><h3>Tú puedes ofrecer</h3><div class="compare-list">${shortChips(p.iOffer,8)}</div></div>
+      </div>
+    </article>`;
+  }).join(""):'<div class="hint">Todavía no tienes solicitudes de intercambio.</div>';
+  renderMatches();
+}
+async function loadTrades(){
+  if(!canEdit()||!supabase)return;
+  const {data,error}=await supabase.from("trade_requests")
+    .select("id,from_user,to_user,status,from_offers,to_offers,created_at,updated_at,accepted_at,completed_at")
+    .order("created_at",{ascending:false});
+  if(error){toast("No se pudieron cargar los intercambios: "+error.message,true);return;}
+  trades=data||[];
+  renderTradeRequests();
+}
+async function proposeTrade(userId){
+  if(!canEdit()||!userId)return;
+  const active=activeTradeWith(userId);
+  if(active){toast("Ya existe una solicitud activa con este usuario.");return;}
+  const {data,error}=await supabase.from("trade_requests")
+    .insert({from_user:session.user.id,to_user:userId,status:"proposed"})
+    .select()
+    .single();
+  if(error){
+    const msg=error.code==="23505"?"Ya existe una solicitud activa entre vosotros.":error.message.includes("No mutual")?"El match ha cambiado y ya no es mutuo. Actualiza los matches.":"No se pudo enviar la solicitud: "+error.message;
+    toast(msg,true);return;
+  }
+  toast("Solicitud de intercambio enviada a "+userName(userId)+".");
+  await loadTrades();
+  return data;
+}
+async function changeTradeStatus(id,status){
+  const {data,error}=await supabase.from("trade_requests").update({status}).eq("id",id).select().single();
+  if(error){toast("No se pudo actualizar la solicitud: "+error.message,true);return;}
+  toast(status==="accepted"?"Solicitud aceptada. Ya podéis hablar por el chat.":status==="completed"?"Intercambio marcado como completado.":"Solicitud actualizada.");
+  await loadTrades();
+  if(data.status==="accepted")await openChat(data.id);
+  else if(openTradeId===id&&data.status!=="accepted"&&data.status!=="completed")closeChat();
+}
+function chatRequest(){return trades.find(t=>t.id===openTradeId)}
+function renderChatHeader(){
+  const t=chatRequest();if(!t)return;
+  const p=requestPerspective(t);
+  $("chatTitle").textContent="💬 Chat con "+userName(p.otherId);
+  $("chatSubtitle").textContent=t.status==="accepted"?"Intercambio aceptado · conversación privada":t.status==="completed"?"Intercambio completado · conversación en solo lectura":"Conversación";
+  $("chatOfferSummary").innerHTML=`<div><h3>Te pueden ofrecer</h3><div class="compare-list">${shortChips(p.theyOffer,10)}</div></div>
+    <div><h3>Tú puedes ofrecer</h3><div class="compare-list">${shortChips(p.iOffer,10)}</div></div>`;
+  const writable=t.status==="accepted";
+  $("chatInput").disabled=!writable;$("sendMessageBtn").disabled=!writable;
+  $("chatHint").textContent=writable?"Solo vosotros dos podéis leer y escribir en esta conversación.":"Este intercambio está cerrado; puedes consultar la conversación, pero no enviar mensajes.";
+}
+function renderMessages(messages){
+  $("chatMessages").innerHTML=messages.length?messages.map(m=>`<div class="message ${m.sender_id===session.user.id?"mine":"theirs"}">
+    <div class="message-meta">${m.sender_id===session.user.id?"Tú":escapeHtml(userName(m.sender_id))} · ${new Date(m.created_at).toLocaleString("es-ES",{dateStyle:"short",timeStyle:"short"})}</div>
+    <div class="message-body">${escapeHtml(m.body)}</div>
+  </div>`).join(""):'<div class="hint">Todavía no hay mensajes. Puedes empezar la conversación.</div>';
+  $("chatMessages").scrollTop=$("chatMessages").scrollHeight;
+}
+async function loadTradeMessages(id){
+  const {data,error}=await supabase.from("trade_messages").select("id,trade_request_id,sender_id,body,created_at").eq("trade_request_id",id).order("created_at");
+  if(error){toast("No se pudieron cargar los mensajes: "+error.message,true);return;}
+  if(openTradeId===id)renderMessages(data||[]);
+}
+async function openChat(id){
+  const t=trades.find(x=>x.id===id);
+  if(!t||!["accepted","completed"].includes(t.status))return;
+  openTradeId=id;$("chatPanel").hidden=false;renderChatHeader();await loadTradeMessages(id);
+  if(chatRealtimeChannel)await supabase.removeChannel(chatRealtimeChannel);
+  chatRealtimeChannel=supabase.channel("trade-chat-"+id)
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"trade_messages",filter:"trade_request_id=eq."+id},()=>loadTradeMessages(id))
+    .subscribe();
+  $("chatPanel").scrollIntoView({behavior:"smooth",block:"start"});
+}
+async function closeChat(){
+  openTradeId=null;$("chatPanel").hidden=true;
+  if(chatRealtimeChannel){await supabase.removeChannel(chatRealtimeChannel);chatRealtimeChannel=null;}
+}
+async function sendChatMessage(){
+  const t=chatRequest(),body=$("chatInput").value.trim();
+  if(!t||t.status!=="accepted"||!body)return;
+  $("sendMessageBtn").disabled=true;
+  const {error}=await supabase.from("trade_messages").insert({trade_request_id:t.id,sender_id:session.user.id,body});
+  $("sendMessageBtn").disabled=false;
+  if(error){toast("No se pudo enviar el mensaje: "+error.message,true);return;}
+  $("chatInput").value="";await loadTradeMessages(t.id);
+}
+async function subscribeTradeRealtime(){
+  if(!canEdit())return;
+  if(tradeRealtimeChannel)await supabase.removeChannel(tradeRealtimeChannel);
+  tradeRealtimeChannel=supabase.channel("trade-updates-"+session.user.id)
+    .on("postgres_changes",{event:"*",schema:"public",table:"trade_requests"},async()=>{await loadTrades();if(openTradeId)renderChatHeader();})
+    .subscribe();
+}
+async function cleanupTradeRealtime(){
+  if(tradeRealtimeChannel){await supabase.removeChannel(tradeRealtimeChannel);tradeRealtimeChannel=null;}
+  if(chatRealtimeChannel){await supabase.removeChannel(chatRealtimeChannel);chatRealtimeChannel=null;}
+  openTradeId=null;trades=[];allCollections=[];
+}
+function updateCompareProposal(){
+  if(!$("compareProposeBtn"))return;
+  const active=comparedUserId?activeTradeWith(comparedUserId):null;
+  const mutual=comparedMatch&&comparedMatch.iOffer.length&&comparedMatch.theyOffer.length;
+  $("compareProposeBtn").hidden=!mutual;
+  $("compareProposeBtn").disabled=!!active;
+  $("compareProposeBtn").textContent=active?"Solicitud activa":"Proponer intercambio";
+  $("compareProposalHint").textContent=mutual&&!active?"Hay intercambio posible en los dos sentidos.":"";
+}
+
 function renderSession(){
   const signed=canEdit();
   if(recoveryMode){
