@@ -11,6 +11,13 @@ let state;
 let session=null;
 let profile=null;
 let otherUsers=[];
+let allCollections=[];
+let trades=[];
+let comparedUserId="";
+let comparedMatch=null;
+let openTradeId=null;
+let tradeRealtimeChannel=null;
+let chatRealtimeChannel=null;
 let recoveryMode=false;
 
 const variants=n=>n<=100?["basic","crystal","rainbow"]:["basic"];
@@ -126,6 +133,7 @@ async function persistVariant(n,v){
     user_id:session.user.id,card_number:n,variant:v,owned:!!x.owned,duplicates:Math.max(0,x.duplicates),updated_at:new Date().toISOString()
   },{onConflict:"user_id,card_number,variant"});
   if(error){toast("No se pudo guardar online: "+error.message,true);return;}
+  renderMatches();
 }
 async function syncAccount(){
   if(!canEdit()||!supabase)return;
@@ -153,11 +161,17 @@ async function loadProfile(){
 }
 async function loadUsers(){
   if(!canEdit()||!supabase)return;
-  const {data,error}=await supabase.from("profiles").select("id,username").neq("id",session.user.id).order("username");
-  if(error){toast("No se pudieron cargar los usuarios: "+error.message,true);return;}
-  otherUsers=data||[];
+  const [profilesResult,collectionsResult]=await Promise.all([
+    supabase.from("profiles").select("id,username").neq("id",session.user.id).order("username"),
+    supabase.from("collections").select("user_id,card_number,variant,owned,duplicates")
+  ]);
+  if(profilesResult.error){toast("No se pudieron cargar los usuarios: "+profilesResult.error.message,true);return;}
+  if(collectionsResult.error){toast("No se pudieron calcular los matches: "+collectionsResult.error.message,true);return;}
+  otherUsers=profilesResult.data||[];
+  allCollections=collectionsResult.data||[];
   $("compareUser").innerHTML='<option value="">Selecciona un usuario</option>'+otherUsers.map(u=>`<option value="${u.id}">${escapeHtml(u.username)}</option>`).join("");
   $("compareUser").disabled=false;
+  renderMatches();
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
 function renderSession(){
@@ -172,6 +186,7 @@ function renderSession(){
   if(!signed){
     $("compareResults").hidden=true;
     $("compareUser").innerHTML='<option value="">Selecciona un usuario</option>';
+    $("chatPanel").hidden=true;
     return;
   }
   $("sessionPill").textContent=profile?.username||session.user.email||"Conectado";
@@ -189,7 +204,8 @@ function getRemote(o,n,v){return o[n]?.[v]||{owned:false,duplicates:0}}
 function itemText(n,v,d=0){return `#${String(n).padStart(3,"0")} · ${variantLabel(v)}${d>0?" · x"+d+" rep.":""}`}
 function chips(items,trade=false){return items.length?items.map(x=>`<span class="chip ${trade?"trade":""}">${itemText(x.n,x.v,x.d||0)}</span>`).join(""):'<span class="muted">Ninguna.</span>'}
 async function compareWith(userId){
-  if(!userId||!canEdit()||!supabase){$("compareResults").hidden=true;return;}
+  comparedUserId=userId||"";comparedMatch=null;
+  if(!userId||!canEdit()||!supabase){$("compareResults").hidden=true;updateCompareProposal();return;}
   $("compareResults").hidden=false;
   ["theirsMissing","mineMissing","theirTrades","myTrades"].forEach(id=>$(id).innerHTML='<span class="muted">Cargando…</span>');
   const {data,error}=await supabase.from("collections").select("card_number,variant,owned,duplicates").eq("user_id",userId);
@@ -205,6 +221,8 @@ async function compareWith(userId){
   }
   $("theirsMissingCount").textContent=theirs.length;$("mineMissingCount").textContent=mine.length;$("theirTradesCount").textContent=theirTrades.length;$("myTradesCount").textContent=myTrades.length;
   $("theirsMissing").innerHTML=chips(theirs);$("mineMissing").innerHTML=chips(mine);$("theirTrades").innerHTML=chips(theirTrades,true);$("myTrades").innerHTML=chips(myTrades,true);
+  comparedMatch={userId,iOffer:myTrades,theyOffer:theirTrades};
+  updateCompareProposal();
 }
 
 $("grid").addEventListener("change",async e=>{
@@ -221,6 +239,16 @@ $("grid").addEventListener("click",async e=>{
 });
 ["q","status","variant","category"].forEach(id=>$(id).addEventListener(id==="q"?"input":"change",renderGrid));
 $("compareUser").addEventListener("change",e=>compareWith(e.target.value));
+$("refreshMatchesBtn").onclick=loadUsers;
+$("matchesList").addEventListener("click",e=>{const b=e.target.closest("[data-propose-user]");if(b)proposeTrade(b.dataset.proposeUser);});
+$("compareProposeBtn").onclick=()=>comparedUserId&&proposeTrade(comparedUserId);
+$("tradeRequests").addEventListener("click",e=>{
+  const chat=e.target.closest("[data-open-chat]");if(chat){openChat(chat.dataset.openChat);return;}
+  const action=e.target.closest("[data-trade-action]");if(action)changeTradeStatus(action.dataset.tradeId,action.dataset.tradeAction);
+});
+$("closeChatBtn").onclick=closeChat;
+$("sendMessageBtn").onclick=sendChatMessage;
+$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChatMessage();}});
 $("export").onclick=()=>{
   const b=new Blob([JSON.stringify({version:3,state},null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");
   a.href=u;a.download="dragon-ball-daima-coleccion.json";a.click();URL.revokeObjectURL(u);
@@ -387,7 +415,10 @@ async function handleSession(newSession){
     renderSession();
     await syncAccount();
     await loadUsers();
+    await loadTrades();
+    await subscribeTradeRealtime();
   }else{
+    await cleanupTradeRealtime();
     renderSession();
   }
 }
