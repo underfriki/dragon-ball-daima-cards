@@ -19,6 +19,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install --disable-pip-version-check requests beautifulsoup4
+      - name: Validate app JavaScript
+        run: node --check app.js
       - name: Copy web app
         run: |
           mkdir -p site
