@@ -446,9 +446,64 @@ $("tradeRequests").addEventListener("click",e=>{
 $("closeChatBtn").onclick=closeChat;
 $("sendMessageBtn").onclick=sendChatMessage;
 $("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChatMessage();}});
-$("export").onclick=()=>{
-  const b=new Blob([JSON.stringify({version:3,state},null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");
-  a.href=u;a.download="dragon-ball-daima-coleccion.json";a.click();URL.revokeObjectURL(u);
+$("export").onclick=async()=>{
+  const button=$("export");
+  button.disabled=true;
+  const oldText=button.textContent;
+  button.textContent="Preparando Excel…";
+  try{
+    const XLSX=await import("https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs");
+    const rows=[];
+    for(const card of catalog){
+      const n=Number(card.number);
+      for(const v of variants(n)){
+        if(!has(n,v)){
+          rows.push({
+            "Carta": n,
+            "Categoría": card.category||"",
+            "Variante": n>100?"Única":variantLabel(v)
+          });
+        }
+      }
+    }
+
+    if(!rows.length){
+      toast("¡No te falta ninguna variante!");
+      return;
+    }
+
+    const ws=XLSX.utils.json_to_sheet(rows,{header:["Carta","Categoría","Variante"]});
+    ws["!cols"]=[{wch:10},{wch:30},{wch:18}];
+    if(ws["!ref"])ws["!autofilter"]={ref:ws["!ref"]};
+
+    const t=totals();
+    const summary=[
+      ["Dragon Ball Daima · Panini",""],
+      ["Usuario",profile?.username||session?.user?.email||""],
+      ["Variantes totales",407],
+      ["Variantes que tienes",t.owned],
+      ["Variantes que te faltan",407-t.owned],
+      ["Porcentaje completado",Math.round(t.owned/407*100)+"%"],
+      ["Generado",new Date().toLocaleString("es-ES")]
+    ];
+    const summaryWs=XLSX.utils.aoa_to_sheet(summary);
+    summaryWs["!cols"]=[{wch:24},{wch:28}];
+
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Faltantes");
+    XLSX.utils.book_append_sheet(wb,summaryWs,"Resumen");
+
+    const username=(profile?.username||"coleccion").replace(/[^a-z0-9_-]+/gi,"-").replace(/^-+|-+$/g,"")||"coleccion";
+    const date=new Date().toISOString().slice(0,10);
+    XLSX.writeFileXLSX(wb,`dragon-ball-daima-faltantes-${username}-${date}.xlsx`);
+    toast(`Excel creado con ${rows.length} variantes pendientes.`);
+  }catch(error){
+    console.error(error);
+    toast("No se pudo crear el Excel. Inténtalo de nuevo.",true);
+  }finally{
+    button.disabled=false;
+    button.textContent=oldText;
+  }
 };
 $("import").onclick=()=>$("file").click();
 $("file").onchange=async e=>{
